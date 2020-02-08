@@ -1,12 +1,16 @@
-// Video processing example using FFmpeg
-// Written by Ted Burke - last updated 12-2-2017
-//
- 
+/**
+ * @author:DzhL
+ * @date : 2/8/2020
+ *
+ **/
+
 #include <stdio.h>
 #include <signal.h>
 #include <stdint.h>
+
 FILE *pipein; 
 FILE *pipeout; 
+
 // Video resolution
 #define W 960
 #define H 720
@@ -30,7 +34,9 @@ void main()
     int x, y, count;
     run = 1; 
     // Open an input pipe from ffmpeg and an output pipe to a second instance of ffmpeg
-    pipein = popen("ffmpeg -i /dev/video0 prueba.avi","r");
+    pipein = popen("ffmpeg -i /dev/video0","r");
+    pipeout = popen("ffmpeg video.avi","w");
+
     //Catch Ctrl-C
 	  signal(SIGINT,intHandler);
     
@@ -53,7 +59,8 @@ void main()
         }
          
         // Write this frame to the output pipe
-        fwrite(frame, 1, H*W*3, pipein);
+        fwrite(frame, 1, H*W*3, pipeout);
+
     }
      
 }

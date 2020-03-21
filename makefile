@@ -1,5 +1,6 @@
 #This target will compile all the file
 all:
-	gcc -o output guiMain.c -lwiringPi `pkg-config --libs gtk+-3.0` `pkg-config --cflags gtk+-3.0`
+	gcc -o output main.c nrf24l01.c -lwiringPi
 	./output
 	rm output
+

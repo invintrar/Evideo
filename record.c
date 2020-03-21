@@ -1,8 +1,7 @@
 /**
  * @author:DzhL
  * @date : 2/8/2020
- *
- **/
+ */
 
 #include <stdio.h>
 #include <signal.h>
@@ -30,7 +29,7 @@ void main()
     int x, y, count;
     run = 1; 
     // Open an input pipe from ffmpeg and an output pipe to a second instance of ffmpeg
-    pipe = popen("ffmpeg -i /dev/video0 -r 24 -s 1280x1024 -metadata title='Estacion Video' video.avi","r");
+    pipe = popen("ffmpeg -i /dev/video0 -r 24 -metadata title='Estacion Video' video.avi","w");
 
     //Catch Ctrl-C
 	  signal(SIGINT,intHandler);

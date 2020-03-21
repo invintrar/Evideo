@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 """
-	@Author = Darwinzh
+	@Author = DzhL
 	@Date = 11/21/2019
 
 """
@@ -27,7 +27,7 @@ while(cap.isOpened()):
 		# Escribro las framas
 		out.write(frame)
 
-		cv2.imshow('Frame', frame)
+		cv2.imshow('Vigilancia', frame)
 		if cv2.waitKey(1) & 0xFF == ord('q'):
 			break
 	else:

@@ -1,10 +1,9 @@
 /**
-*
-*Author: darwinzh
-*
-*/
+ * @author: DzhL
+ */
 
 #ifndef NRF24L01_H
+
 #define NRF24L01_H
 
 #include <stdio.h>
@@ -13,9 +12,8 @@
 #include <wiringPiSPI.h>
 
 /*Definimos los puertos a utilizar*/
-#define RF_CS	10
-#define RF_CE	9
-#define RF_IRQ 	5
+#define RF_CE	3
+#define RF_IRQ 	4
 #define CHANNEL 0
 
 #define RF24L01_CS_setOutput()	 	pinMode(RF_CS, OUTPUT)
@@ -71,6 +69,7 @@
 
 uint8_t aux[2];
 
+
 typedef struct _RF24L01_reg_CONFIG_content {
   uint8_t PRIM_RX      :1;
   uint8_t PWR_UP       :1;
@@ -81,6 +80,7 @@ typedef struct _RF24L01_reg_CONFIG_content {
   uint8_t MASK_RX_DR   :1;
   uint8_t reserved     :1;
 } RF24L01_reg_CONFIG_content;
+
 
 typedef struct _RF24L01_reg_EN_AA_content {
   uint8_t ENAA_P0  :1;//EN_AA bit 0
@@ -93,6 +93,7 @@ typedef struct _RF24L01_reg_EN_AA_content {
 
 } RF24L01_reg_EN_AA_content;
 
+
 typedef struct _RF24L01_reg_EN_RXADDR_content {
   uint8_t ERX_P0  :1;//bit 0
   uint8_t ERX_P1  :1;
@@ -104,29 +105,36 @@ typedef struct _RF24L01_reg_EN_RXADDR_content {
 
 } RF24L01_reg_EN_RXADDR_content;
 
+
 typedef struct _RF24L01_reg_SETUP_AW_content {
   uint8_t AW       :2;
   uint8_t reserved :6;
 } RF24L01_reg_SETUP_AW_content;
 
+//04 SETPU_RETR
 typedef struct _RF24L01_reg_SETUP_RETR_content {
   uint8_t ARC :4;
   uint8_t ARD :4;
 } RF24L01_reg_SETUP_RETR_content;
 
+//05 RF_CH
 typedef struct _RF24L01_reg_RF_CH_content {
   uint8_t RF_CH    :7;
   uint8_t reserved :1;
 } RF24L01_reg_RF_CH_content;
 
+//06 RF_SETUP
 typedef struct _RF24L01_reg_RF_SETUP_content {
-  uint8_t LNA_HCURR :1;
-  uint8_t RF_PWR    :2;
-  uint8_t RF_DR     :1;
-  uint8_t PLL_LOCK  :1;
-  uint8_t reserved  :3;
+  uint8_t OBSOLOTE 		 :1;
+  uint8_t RF_PWR   		 :2;
+  uint8_t RF_DR_HIGH     :1;
+  uint8_t PLL_LOCK 		 :1;
+  uint8_t RF_DR_LOW		 :1;
+  uint8_t RESERVED		 :1;
+  uint8_t CONT_WAV 		 :3;
 } RF24L01_reg_RF_SETUP_content;
 
+//07 STATUS
 typedef struct _RF24L01_reg_STATUS_content {
   uint8_t TX_FULL   :1;
   uint8_t RX_P_NO   :3;
@@ -203,14 +211,30 @@ typedef struct _RF24L01_reg_FEATURE_content {
   uint8_t reserved   :4;
 } RF24L01_reg_FEATURE_content;
 
+
+
+/** Function Prototype **/
+
 void RF24L01_init(void);
+
 void RF24L01_setup(uint8_t *tx_addr, uint8_t *rx_addr, uint8_t channel);
-void RF24L01_set_mode_TX(void);
-void RF24L01_set_mode_RX(void);
-uint8_t RF24L01_was_data_sent(void);
-uint8_t RF24L01_is_data_available(void);
-void RF24L01_read_payload(uint8_t *data, uint8_t length);
+
 void RF24L01_write_payload(uint8_t *data, uint8_t length);
+
+void RF24L01_read_payload(uint8_t *data, uint8_t length);
+
+void RF24L01_set_mode_RX(void);
+
+void sendData(uint8_t data[],uint8_t size);
+
+uint8_t RF24L01_status(void);
+
 void RF24L01_clear_interrupts(void);
-void RF24L01_clear_setup(void);
+
+void RF24L01_powerDown(void);
+
 #endif
+/**
+ * End File
+ *
+ **/

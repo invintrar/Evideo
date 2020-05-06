@@ -4,55 +4,19 @@
  */
 
 #include "main.h"
-#include <signal.h>
 
-
-/* En esta parte se edito desde raspberry v2*/
-
-uint8_t bNrf, bTog, bMrx, bInit;
-uint16_t sensor;
-
-uint8_t tx_addr[5] = {0x78, 0x78, 0x78, 0x78, 0x78};
-uint8_t rx_addr[5] = {0x78, 0x78, 0x78, 0x78, 0x78};
-
-//Data sent or receive Nrf24L01 +
-uint8_t txEnv[8];
-uint8_t rxRec[8];
-
-uint32_t valueX;
-uint32_t valueY;
-uint32_t valueZ;
-
-struct tm *ptr;
-time_t t;
-
-static uint8_t run;
-
-void interrupcion(void);
-
-//Catch Ctrl C
-void intHandler(int dummy){
-	Led_SetLow();
-	RF24L01_powerDown();
-	run = 0;
-}
-
-float fnabs(float a){
-		if(a<0)
-				a=-a;
-		return a;
-}
-
-int main(){
-	float corriente, promedio;
-	float voltajeS;
-	uint8_t ipr;
-	bNrf = 1;
+/**
+ * Bucle main
+ */
+int main(int argc, char *argv[]){
+    //Init flag for nrf start in mode transmition
+	bNrf = 4;
+    // Flag use for blink Led
 	bTog = 1;
-	bInit = 0;
-	bMrx = 1;
+    // Use for first date receive
+	bInit = 1;
+    // Use for kept in bucle while main
 	run = 1;
-	ipr=promedio=0;
 
 	//Setting Port CE and SPI
 	RF24L01_init();
@@ -60,25 +24,25 @@ int main(){
 	//Setting address nrf and channel 
 	RF24L01_setup(tx_addr, rx_addr, 22);
 
+    //Setting Led
 	Led_SetOutput();
 
 	//Setting Interrupt
 	wiringPiISR(RF_IRQ , INT_EDGE_FALLING, interrupcion);
 
-
-
 	//Catch Ctrl-C
 	signal(SIGINT,intHandler);
 
 	while(run){
+        //Use for blink led
 		if(bTog){
 			bTog = 0;
 			Led_SetHigh();
-			delay(250);
+			delay(100);
 		}else{
 			bTog = 1;
 			Led_SetLow();
-			delay(250);
+			delay(100);
 		}
 
 		// Get time
@@ -95,35 +59,31 @@ int main(){
 		txEnv[6] = ptr->tm_mday;
 		txEnv[7] = ptr->tm_year-100;
 
-
-		switch(bNrf){
-			case 1:
-				if(bMrx==1){
-					bNrf =0;
-					bMrx=0;
-					RF24L01_set_mode_RX();
-					printf("-----Mode  RX-----\nEsperando  Dato...\n");
-				}else{
-					bNrf = 0;
-				    printf("\nReceive %d\n",rxRec[0]);
-					printf("RC:%d:%d:%d\n",rxRec[3],rxRec[2],rxRec[1]);
-					sensor=(rxRec[5]<<8) | rxRec[4];
-					voltajeS = sensor*3.3/1023;
-					corriente = (fnabs(voltajeS - 1.65)/0.0132)+2;
-					printf("Consumo:%.2f mA\n",corriente);
-				}
+		switch(bNrf)
+        {
+			case 1://Show Data received
+               	bNrf = 3;
+				printf("Estacion Base: %d:%d:%d   %d/%d/%d\n",
+                        rxRec[0],rxRec[1],rxRec[2],rxRec[3], rxRec[4], rxRec[5]);
 				break;
-			case 2:
-				bNrf = 1;
-				bMrx = 1;
-				printf("Data Sent\n");
-				break;
-			case 3:
-				bNrf= 0;
-				printf("CPU %d:%d:%d\n", txEnv[2], txEnv[1], txEnv[0]);
+			case 2://Date Sent
+				bNrf = 0;
+				printf("Dato Enviado\n");
+                
+                RF24L01_set_mode_RX();
+				printf("-----Mode  RX-----\nEsperando  Dato...\n");
+			    break;
+			case 3://MAX_RT
+                bNrf = 0;
+				printf("CPU %d:%d:%d\n", txEnv[3], txEnv[2], txEnv[1]);
 				sendData(txEnv, sizeof(txEnv));
 				break;
-			default:
+             case 4:
+                bNrf = 0;
+                RF24L01_set_mode_RX();
+    			printf("-----Mode  RX-----\nEsperando  Dato...\n");
+                break;
+	    	default:
 				break;
 		}
 
@@ -131,9 +91,13 @@ int main(){
 	return 0;
 }//End Main
 
-
+/**
+ * Interrupt of the nrf when receive data or sent data
+ * or error in transmition.
+ */
 void interrupcion(){
-	// Return 1:Data Sent, 2:RX_DR, 3:MAX_RT
+	// Return 1:RX_DR(Data Received), 2:Data Sent,
+    // 3:MAX_RT(Maximun number retransmition in mode Transmisition
 	bNrf = RF24L01_status();
 
 	if(bNrf){
@@ -145,3 +109,13 @@ void interrupcion(){
 	RF24L01_clear_interrupts();
 }
 
+//Catch Ctrl C
+void intHandler(int dummy){
+	Led_SetLow();
+	RF24L01_powerDown();
+	run = 0;
+}
+
+/**
+ * End File
+ */

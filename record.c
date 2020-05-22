@@ -6,36 +6,62 @@
 #include <stdio.h>
 #include <signal.h>
 #include <stdint.h>
+#include <gtk/gtk.h>
 
-FILE *pipe; 
-
-#define W 960
-#define H 720
 static uint8_t run;
+uint8_t segundos, minutos, horas;
+char tmp[1024];
 
-//Catch Ctrl C
-void intHandler(int dummy){
-  // Flush and close input and output pipes
-  fflush(pipe);
-  pclose(pipe);
-  run = 0;
-}
-
-// Allocate a buffer to store one frame
-unsigned char frame[H][W][3] = {0};
+void intHandler();
+void acumulador();
  
 void main()
 {
-    int x, y, count;
-    run = 1; 
-    // Open an input pipe from ffmpeg and an output pipe to a second instance of ffmpeg
-    pipe = popen("ffmpeg -i /dev/video0 -r 24 -metadata title='Estacion Video' video.avi","w");
+    segundos = minutos = horas = 0;
+
+    sprintf(tmp, "ffmpeg -i /dev/video0 -t 00:00:%d -r 24 -metadata title='Estacion Video' video.avi",30);
 
     //Catch Ctrl-C
-	  signal(SIGINT,intHandler);
+    signal(SIGINT,intHandler);
+    
+    g_timeout_add_seconds(1,(GSourceFunc) acumulador, NULL);
     
     // Process video frames
-    while(run)
-    {
-	} 
+    gtk_main();
 }
+
+void acumulador()
+{
+    if(minutos == 1 && segundos == 10)
+    {
+        system(tmp);
+        
+    }
+    if(segundos <= 58)
+    {
+        segundos++;
+    }
+    else
+    {
+        segundos = 0;
+        if(minutos <= 58)
+        {
+            minutos++;
+        }
+        else
+        {
+            horas++;
+            minutos = 0;
+        }
+    }
+
+    printf("Hora: %02d:%02d:%02d\n ",horas,minutos,segundos);
+}
+
+//Catch Ctrl C
+void intHandler(int dummy)
+{
+ gtk_main_quit();
+}
+
+

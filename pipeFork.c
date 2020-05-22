@@ -16,28 +16,25 @@ int main(void){
 				printf("Errror ala abrir pipe");
 		}
 
-		pidC=fork();
+		pidC = fork();
 
 		switch(pidC){
-				case 0:
-						//hijo
-						close(fd[0]);
-						write(fd[1], "abcde", 5);
-						close(fd[1]);
-						exit(0);
-						break;
-				case -1:
-						//error
-						printf("Error\n");
-						break;
-				default:
-						//padre
-						close(fd[1]);
-					    num = read(fd[0],buf,sizeof(buf)); 
-						printf("Padre lee %d bytes:%s\n", num, buf);
-						close(fd[0]);
-						exit(0);
-	       				break;
+				case 0: //hijo
+                    close(fd[0]);
+					write(fd[1], "abcde", 5);
+					close(fd[1]);
+					exit(0);
+					break;
+				case -1: // error
+                    printf("Error\n");
+                    break;
+				default: // padre
+                    close(fd[1]);
+					num = read(fd[0],buf,sizeof(buf)); 
+					printf("Padre lee %d bytes:%s\n", num, buf);
+					close(fd[0]);
+					exit(0);
+	       			break;
 		}
 		return 0;
 }

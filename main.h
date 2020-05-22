@@ -26,12 +26,14 @@ uint8_t tx_addr[5] = {0x78, 0x78, 0x78, 0x78, 0x78};
 uint8_t rx_addr[5] = {0x78, 0x78, 0x78, 0x78, 0x78};
 
 //Data sent or receive Nrf24L01+
-uint8_t txEnv[8];
-uint8_t rxRec[8];
+uint8_t txEnv[12] = {0};
+uint8_t rxRec[12] = {0};
 
 //Variable get time
 struct tm *ptr;
 time_t t;
+uint8_t tarea = 0;
+uint16_t time_us = 0;
 
 //Use for ending bucle infinite
 static uint8_t run;
@@ -39,6 +41,8 @@ static uint8_t run;
 //Function prototype
 void interrupcion(void);
 void intHandler(int dummy);
+void tareas(uint8_t tarea);
+
 
 char tmp[1024];
 

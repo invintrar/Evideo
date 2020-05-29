@@ -14,8 +14,8 @@ char tmp[1024];
 
 void intHandler();
 void acumulador();
- 
-void main()
+
+void main(int argc, char *argv[])
 {
     segundos = minutos = horas = 0;
 
@@ -28,6 +28,8 @@ void main()
     
     // Process video frames
     gtk_main();
+
+    return 0;
 }
 
 void acumulador()
@@ -61,7 +63,9 @@ void acumulador()
 //Catch Ctrl C
 void intHandler(int dummy)
 {
- gtk_main_quit();
+    gtk_main_quit();
 }
 
-
+/**
+ * End File
+ */

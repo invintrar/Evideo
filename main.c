@@ -10,83 +10,45 @@
  */
 int main(int argc, char *argv[])
 {
-	//Init flag for nrf start in mode transmition
-	bNrf = 4;
-    // Flag use for blink Led
-	bTog = 1;
-    // Use for first date receive
-	bInit = 1;
-    // Use for kept in bucle while main
-	run = 1;
-
-	//Setting Port CE and SPI
+	// Setting Port CE and SPI and wiringPi
 	RF24L01_init();
-
-	//Setting address nrf and channel 
+	// Setting address nrf and channel 
 	RF24L01_setup(tx_addr, rx_addr, CHANNEL);
-
-    //Setting Led
-	Led_SetOutput();
-
-	//Setting Interrupt
+    // Setting led output
+	ledSetOutput();
+	// Setting Interrupt for NRF2L01+
 	wiringPiISR(RF_IRQ , INT_EDGE_FALLING, interrupcion);
-
-	//Catch Ctrl-C
+	// Interrupt when timer
+	signal(SIGALRM, timer_handler);
+	// Interrupt when catch Ctrl-C
 	signal(SIGINT,intHandler);
+	// delete record video
+	//strcpy(tmp,"rm video.avi"); 
+	//system(tmp);
+	//turn On led
+	ledOn();
 
-	strcpy(tmp,"rm video.avi"); 
-	system(tmp);
-
-	// Bucle infinite
+	// Bucle while
 	while(run)
 	{
-		//Use for blink led
-		if(bTog){
-			bTog = 0;
-			Led_SetHigh();
-			delay(100);
-		}else{
-			bTog = 1;
-			Led_SetLow();
-			delay(100);
-		}
-
-		t = time(NULL);
-		ptr = localtime(&t);
-
-		//Prepare the buffer to send from the data_to_send struct
-		txEnv[0] = 0x01;
-		txEnv[1] = ptr->tm_sec;
-		txEnv[2] = ptr->tm_min;
-		txEnv[3] = ptr->tm_hour;
-		txEnv[4] = (ptr->tm_wday)+1;
-		txEnv[5] = (ptr->tm_mon)+1;
-		txEnv[6] = ptr->tm_mday;
-		txEnv[7] = ptr->tm_year-100;
-
 		switch(bNrf)
-        {
-			case 1://Show Data received
-				time_us = (rxRec[8] << 8) | rxRec[7];
-				//Show data in display
-                printf("Estacion Base: %d:%d:%d:%d   %d/%d/%d\n",
-                        rxRec[3], rxRec[2], rxRec[1], time_us, rxRec[5], rxRec[4], rxRec[6]);
+		{
+			case 1://Data received
 				bNrf = 4;
-                //tareas(tarea);
+				RF24L01_read_payload(rxRec, sizeof(rxRec));
+				printf("Dato Recibido Opcion: %d\n", rxRec[0]);
+				if(rxRec[0] > 0)
+					task(rxRec[0]);
                 break;
 			case 2://Date Sent
-				bNrf = 0;
+				bNrf = 4;
 				printf("Dato Enviado\n");
-                
-                RF24L01_set_mode_RX();
-				printf("-----Mode  RX-----\nEsperando  Dato...\n");
 				break;
 			case 3://MAX_RT
-                bNrf = 0;
-				printf("CPU %d:%d:%d\n", txEnv[3], txEnv[2], txEnv[1]);
-				sendData(txEnv, sizeof(txEnv));
+				printf("Maximo Numero de Retransmisiones\n");
+                bNrf = 4;
 				break;
-            case 4:
+            case 4:// Set module NRF24L01+ in mode reception
                 bNrf = 0;
                 RF24L01_set_mode_RX();
 				printf("-----Mode  RX-----\nEsperando  Dato...\n");
@@ -108,51 +70,30 @@ void interrupcion()
 	// Return 1:RX_DR(Data Received), 2:Data Sent,
     // 3:MAX_RT(Maximun number retransmition in mode Transmisition
 	bNrf = RF24L01_status();
-
-	if(bNrf)
-	{
-		RF24L01_read_payload(rxRec, sizeof(rxRec));
-		RF24L01_clear_interrupts();
-		return;
-	} // end if
 	RF24L01_clear_interrupts();
+
 } // end Interrupt
 
 
-//Catch Ctrl C
-void intHandler(int dummy)
-{
-	Led_SetLow();
-	RF24L01_powerDown();
-	run = 0;
-} // end catch Ctrl C
-
-
 // Make a take
-void tareas(uint8_t tarea)
+void task(uint8_t opc)
 {
-    switch(tarea)
+    switch(opc)
         {
-            case 1: // Igualar reloj
-				//Show data in display
-                printf("Estacion Base: %d:%d:%d   %d/%d/%d\n",
-                        rxRec[0],rxRec[1],rxRec[2],rxRec[3], rxRec[4], rxRec[5]);
-				// save format in variable temporal
-                sprintf( tmp, "date --set=\"20%02d-%02d-%02d %02d:%02d:%02d\"\n",
-                        rxRec[5],rxRec[4],rxRec[3],rxRec[0], rxRec[1], rxRec[2]);
-				// execute istruction in terminal
-                system(tmp);
-                // Show data of time in terminal
-                printf("CPU %d:%d:%d\n", txEnv[3], txEnv[2], txEnv[1]);
+            case 1: // Syncronization clock
 				// Send data to station base
-                sendData(txEnv, sizeof(txEnv));
+				syncClock(2);
                 break;
             case 2: // Empezamos la captura de video
-                sprintf(tmp, "ffmpeg -i /dev/video0 -t %02d:%02d:%02d -r 24 -metadata title='Estacion Video' video.avi",rxRec[3],rxRec[2],0);
-                system(tmp);
+				displayClock(CLOCK_REALTIME, "CLOCK_REALTIME");
+				timer.it_value.tv_sec = 60;
+				timer.it_value.tv_usec = 0; // start in 60 sec
+				timer.it_interval.tv_sec = 1;
+				timer.it_interval.tv_usec = 0; // period = 1 sec
+				setitimer(ITIMER_REAL, &timer, NULL);
                 break;
             case 3: // Apagamos la aplicacion
-                Led_SetLow();
+                ledOff();
                 RF24L01_powerDown();
                 run = 0;
                 break;
@@ -160,6 +101,139 @@ void tareas(uint8_t tarea)
                 break;
         } // end switch
 } // end tarea
+
+
+//Catch Ctrl C
+void intHandler(int dummy)
+{
+	ledOff();
+	RF24L01_powerDown();
+	run = 0;
+	run1 = 0;
+} // end catch Ctrl C
+
+
+// Function for sync_clock and match clock
+void syncClock(int times)
+{
+	unsigned int iTimeSec = 0;
+	unsigned int iTimeNse = 0;
+	
+	printf("Synchronization %d\n", times);
+
+	iTimeSec = (rxRec[4] << 24) |(rxRec[3] <<16) | (rxRec[2] << 8) | rxRec[1] ;
+	iTimeNse = (rxRec[8] << 24) |(rxRec[7] <<16) | (rxRec[6] << 8) | rxRec[5] ;
+
+	struct timespec timeSet;
+
+	timeSet.tv_sec = iTimeSec;
+	timeSet.tv_nsec = iTimeNse;
+
+	setClock( CLOCK_REALTIME, &timeSet);
+	getTime();
+	displayClock(CLOCK_REALTIME, "CLOCK_REALTIME");
+	printf("Reloj Igualado\n");
+	
+
+}
+
+
+// get time of the raspberry opc:1 Seconds, microseconds
+// other case date
+void getTime(void)
+{
+	unsigned int in[2] = {0};
+	struct timespec ts;
+	if (clock_gettime(CLOCK_REALTIME, &ts) == -1) 
+	{
+		perror("clock_gettime");
+		exit(EXIT_FAILURE);
+	}
+    in[0] = (int) ts.tv_sec;
+    in[1] = (int) ts.tv_nsec;
+	// Get Seconds and convert to uint8_t
+	txEnv[0] = 0;
+	txEnv[1] = in[0];
+	txEnv[2] = (in[0] >> 8);
+	txEnv[3] = (in[0] >> 16);
+	txEnv[4] = (in[0] >> 24);
+	// Get microSeconds and convert to uint8_t
+	txEnv[5] = in[1];
+	txEnv[6] = (in[1] >> 8);
+	txEnv[7] = (in[1] >> 16);
+	txEnv[8] = (in[1] >> 24);
+	txEnv[9] = 0;
+	txEnv[10] = 0;
+	txEnv[11] = 0;
+	txEnv[12] = 0;
+} // end getTime
+
+// Set clock of raspberry pi
+void setClock(clockid_t clock, struct timespec *ts)
+{
+    if(clock_settime(clock, ts) == -1 )
+    {
+        perror("clock_settime");
+        exit(EXIT_FAILURE);
+    }
+}// set clock of raspberry pi
+
+void timer_handler(int sig)
+{
+	static bool cont = true;
+    if(cont)
+    {
+        printf("Timer_handler: signal=%d\n", sig);
+        displayClock(CLOCK_REALTIME, "CLOCK_REALTIME");
+		videoCapture();
+        cont = !cont;
+        
+    }else
+    {   
+		ledToggle();  
+    }      
+}
+
+void videoCapture(void)
+{
+	sprintf(tmp, "ffmpeg -i /dev/video0 -t %02d:%02d:%02d -r 24 -metadata title='Estacion Video' video.avi",
+	rxRec[3],rxRec[2],rxRec[1]);
+    system(tmp);
+}
+
+void displayClock(clockid_t clock, char *name)
+{    
+    if (clock_gettime(clock, &ts) == -1) 
+    {
+        perror("clock_gettime");
+        exit(EXIT_FAILURE);
+    }
+    printf("%-15s: %10ld.%03ld (", name,
+    (long) ts.tv_sec, ts.tv_nsec / 1000000);
+    long days = ts.tv_sec / SECS_IN_DAY;
+    if (days > 0)
+        printf("%ld days + ", days);
+    printf("%2ldh %2ldm %2lds", (ts.tv_sec % SECS_IN_DAY) / 3600,
+    (ts.tv_sec % 3600) / 60, ts.tv_sec % 60);
+    printf(")\n");
+}
+
+
+// Led toggle off/on
+void ledToggle(void)
+{
+	// Flag use for blink Led
+	static bool bTog = true;
+	//Use for blink led
+	if(bTog){
+		ledOn();
+		bTog = !bTog ;
+	}else{
+		ledOff();
+		bTog = !bTog ;
+	}
+} // end 
+
 
 /**
  * End File

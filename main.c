@@ -10,6 +10,12 @@
  */
 int main(int argc, char *argv[])
 {
+	if(exist())
+    {
+        sprintf(tmp, "rm video.avi");
+        system(tmp);
+        printf("Archivo video.avi borrado\n");
+    }
 	// Setting Port CE and SPI and wiringPi
 	RF24L01_init();
 	// Setting address nrf and channel 
@@ -133,7 +139,7 @@ void syncClock(int times)
 	getTime();
 	displayClock(CLOCK_REALTIME, "CLOCK_REALTIME");
 	printf("Reloj Igualado\n");
-	
+
 
 }
 
@@ -183,7 +189,6 @@ void timer_handler(int sig)
 	static bool cont = true;
     if(cont)
     {
-        printf("Timer_handler: signal=%d\n", sig);
         displayClock(CLOCK_REALTIME, "CLOCK_REALTIME");
 		videoCapture();
         cont = !cont;
@@ -196,8 +201,8 @@ void timer_handler(int sig)
 
 void videoCapture(void)
 {
-	sprintf(tmp, "ffmpeg -i /dev/video0 -t %02d:%02d:%02d -r 24 -metadata title='Estacion Video' video.avi",
-	rxRec[3],rxRec[2],rxRec[1]);
+	sprintf(tmp, "ffmpeg -i /dev/video0 -t %02d:%02d:%02d -r 24 -metadata title='Estacion Video' -loglevel quiet video.avi &",
+	rxRec[2],rxRec[1],0);
     system(tmp);
 }
 
@@ -233,6 +238,23 @@ void ledToggle(void)
 		bTog = !bTog ;
 	}
 } // end 
+
+
+// Use for check video file
+uint8_t exist(void)
+{
+    FILE *arch;
+    arch = fopen("video.avi","r");
+    if (arch == NULL)
+    {
+        return 0;
+    }
+    else
+    {
+        fclose(arch);
+        return 1;  
+    }
+} // en exist
 
 
 /**

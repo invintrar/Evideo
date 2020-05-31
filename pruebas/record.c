@@ -7,20 +7,45 @@
 #include <signal.h>
 #include <stdint.h>
 #include <gtk/gtk.h>
+#include <unistd.h>
+
+
 
 static uint8_t run;
 uint8_t segundos, minutos, horas;
 char tmp[1024];
+char buffer[12];
 
 void intHandler();
 void acumulador();
 
-void main(int argc, char *argv[])
+uint8_t be(void)
+{
+    FILE *arch;
+    arch = fopen("video.avi","r");
+    if (arch == NULL)
+    {
+        return 0;
+    }
+    else
+    {
+        fclose(arch);
+        return 1;  
+    }
+}
+
+int main(int argc, char *argv[])
 {
     segundos = minutos = horas = 0;
 
-    sprintf(tmp, "ffmpeg -i /dev/video0 -t 00:00:%d -r 24 -metadata title='Estacion Video' video.avi",30);
-
+    if(be())
+    {
+        sprintf(tmp, "rm video.avi");
+        system(tmp);
+        printf("Archivo video.avi borrado");
+    }else{
+        printf("No hay archivo para borrar");
+    }
     //Catch Ctrl-C
     signal(SIGINT,intHandler);
     
@@ -34,10 +59,12 @@ void main(int argc, char *argv[])
 
 void acumulador()
 {
-    if(minutos == 1 && segundos == 10)
+    if(minutos == 0 && segundos == 30)
     {
+        printf("\nInicio de Grabacion: %02d min %02d s" , minutos, segundos); 
+        sprintf(tmp, "ffmpeg -i /dev/video0 -t 00:00:%d -r 24 -metadata title='Estacion Video' -loglevel quiet video.avi &",10);
         system(tmp);
-        
+
     }
     if(segundos <= 58)
     {
@@ -57,7 +84,7 @@ void acumulador()
         }
     }
 
-    printf("Hora: %02d:%02d:%02d\n ",horas,minutos,segundos);
+    printf("\nHora: %02d:%02d:%02d",horas,minutos,segundos);
 }
 
 //Catch Ctrl C

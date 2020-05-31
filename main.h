@@ -8,6 +8,7 @@
 /**
  * Define libraries
  */
+#include <pthread.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -76,6 +77,7 @@ void timer_handler(int sig);
 void videoCapture(void);
 void displayClock(clockid_t clock, char *name);
 void ledToggle(void);
+uint8_t exist(void);
 
 #endif
 

@@ -8,7 +8,6 @@
 /**
  * Define libraries
  */
-#include <pthread.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -17,6 +16,7 @@
 #include <string.h>
 #include <sys/mman.h>
 #include <sys/time.h>
+#include <sys/types.h>
 #include <time.h>
 #include <unistd.h>
 #include <wiringPi.h>
@@ -26,8 +26,12 @@
 /**
  *          Define macros
  */
-
+#define LONG_MAX	2147483647L
+#define LONG_MIN	(-LONG_MAX-1)
+#define ULONG_MAX	0xFFFFFFFFUL
+#define TO_NSEC(t) (((long)t[0] * 1000000000L) + t[1]*1000)
 #define _XOPEN_SOURCE 700
+#define TIMES 5
 #define SECS_IN_DAY (24 * 60 * 60)
 #define handle_error(msg) \
 do { perror(msg); exit(EXIT_FAILURE); } while (0)
@@ -63,6 +67,22 @@ int timeNanoSeconds = 0;
 int timeSeconds = 0;
 // variable temporal for formate output string
 char tmp[1024];
+// Use for execute proceso in terminal
+int ret;
+// Use count 
+unsigned int cSync = 0;
+// Time sent get from mastater
+int t1[2] = {0};
+int t3[2] = {0};
+
+long ms_diff = 0;
+long sm_diff = 0;
+long sum_offset = 0;
+long sum_delay = 0;
+long largest_offset = LONG_MIN;
+long smallest_offset = LONG_MAX;
+long smallest_delay = LONG_MAX;
+long largest_delay = LONG_MIN;
 
 /**
  *          Function prototype
@@ -70,14 +90,19 @@ char tmp[1024];
 void interrupcion(void);
 void task(uint8_t opc);
 void intHandler(int dummy);
-void syncClock(int times);
-void getTime(void);
+void syncClock(void);
+void getTime(int in[2]);
 void setClock(clockid_t clock, struct timespec *ts);
 void timer_handler(int sig);
 void videoCapture(void);
 void displayClock(clockid_t clock, char *name);
 void ledToggle(void);
 uint8_t exist(void);
+void processEnd(int sig);
+void convertCharToInt(int out[2]);
+long syncDiffMS(int t1[2]);
+long delayDifSM(int t4[2]) ;
+
 
 #endif
 

@@ -11,6 +11,7 @@
  */
 int main(int argc, char *argv[])
 {
+	uint8_t i;
 	// delete record video if exist 
 	if(exist())
     {
@@ -34,16 +35,18 @@ int main(int argc, char *argv[])
 	signal(SIGCHLD, processEnd);
 	//turn On led
 	ledOn();
-
+	// set mode RX
+	RF24L01_set_mode_RX();
+	printf("-----Mode  RX-----\nEsperando  Dato...\n");
+	
 	// Bucle while
 	while(run)
 	{
 		switch(bNrf)
 		{
 			case 1://Data received
-				bNrf = 4;
+				bNrf = 0;
 				RF24L01_read_payload(rxRec, sizeof(rxRec));
-				printf("Dato Recibido Opcion: %d\n", rxRec[0]);
 				if(rxRec[0] > 0)
 					task(rxRec[0]);
                 break;
@@ -55,13 +58,8 @@ int main(int argc, char *argv[])
 				break;
 			case 3://MAX_RT
 				printf("Maximo Numero de Retransmisiones\n");
-                bNrf = 4;
-				break;
-            case 4:// Set module NRF24L01+ in mode reception
                 bNrf = 0;
-                RF24L01_set_mode_RX();
-				printf("-----Mode  RX-----\nEsperando  Dato...\n");
-                break;
+				break;
 			default:
 				break;
 		} // end switch
@@ -98,6 +96,7 @@ void task(uint8_t opc)
 				syncClock();
                 break;
             case 2: // Empezamos la captura de video
+				printf("Iniciando Captura de video...\n");
 				displayClock(CLOCK_REALTIME, "CLOCK_REALTIME");
 				timer.it_value.tv_sec = 59;
 				timer.it_value.tv_usec = 0; // start in 60 sec
@@ -106,6 +105,7 @@ void task(uint8_t opc)
 				setitimer(ITIMER_REAL, &timer, NULL);
                 break;
             case 3: // Apagamos la aplicacion
+				printf("Apagado de la aplicacion remotamente");
                 ledOff();
                 RF24L01_powerDown();
 				exit(EXIT_SUCCESS);
@@ -146,20 +146,26 @@ void syncClock()
 	
 	if(cSync < TIMES)
 	{
-		if(rxRec[10]== 1)
+		printf("IF: %d  vecess sincronizando\n",cSync);
+		if(rxRec[10]== 1 )
 		{
+			printf("IF Comprueba rxRec[10]=1\n");
 			convertCharToInt(t1);
 			ms_diff = syncDiffMS(t1);
+			printf("ms_diff = %lu\n", ms_diff);
+			//Obtenemos el tiempo y colocamo los datos en una variable globar txEnv[]
 			getTime(t3);
-			sendData(txEnv,12);
+			txEnv[0] = 2;
+			sendData(txEnv);
+			printf("here\n");
 		}
 		else
 		{
+			printf("Else Comprueba rxRec[10]=1\n");
 			convertCharToInt(t1);
 			sm_diff = delayDifSM(t1);
 			long offset = (ms_diff - sm_diff)/2;
 			long delay = (ms_diff + sm_diff)/2;
-
 			/* calculate averages, min, max */
 			sum_offset += offset;
 			if (largest_offset < offset) {
@@ -175,9 +181,15 @@ void syncClock()
 			if (smallest_delay > delay) {
 				smallest_delay = delay;
 			}
-		cSync++;
+			txEnv[0]=1;
+			sendData(txEnv);
+			cSync++;
 		}
-	}else{
+	}
+	else
+	{
+		printf("Else: %d veces sincronizando\n",cSync);
+		/*
 		struct timespec timeSet;
 		int in[2] = {0};
 		getTime(in);
@@ -186,16 +198,18 @@ void syncClock()
 		setClock( CLOCK_REALTIME, &timeSet);
 		displayClock(CLOCK_REALTIME, "CLOCK_REALTIME");
 		printf("Sincronizacion Terminada\n");
+		*/
 		/* print results */
 		printf("Average Offset = %ldns\n", sum_offset/(TIMES));
 		printf("Average Delay = %ldns\n", sum_delay/(TIMES));
 		printf("Smallest Offset = %ldns\n", smallest_offset);
 		printf("Smallest Delay = %ldns\n", smallest_delay);
-		
 		printf("Largest Offset = %ldns\n", largest_offset);
 		printf("Largest Delay = %ldns\n", largest_delay);
 		printf("Done!\n");
-
+		txEnv[0]=3;
+		sendData(txEnv);
+		// init variable
 		cSync = 0;
 		sum_offset = 0;
 		sum_delay = 0;
@@ -203,7 +217,6 @@ void syncClock()
 		smallest_offset = LONG_MAX;
 		smallest_delay = LONG_MAX;
 		largest_delay = LONG_MIN;
-		
 	}
 } // en synClock
 
@@ -217,7 +230,8 @@ void syncClock()
  */
 void getTime(int in[2])
 {
-	if(in != NULL){
+	if(in != NULL)
+	{
 		struct timespec ts;
 		if (clock_gettime(CLOCK_REALTIME, &ts) == -1) 
 		{
@@ -290,6 +304,7 @@ void timer_handler(int sig)
  */
 void videoCapture(void)
 {
+	printf("Se grabara %02d:%02d:%02d\n", rxRec[2], rxRec[2], 0);
 	pid_t pid;
 	pid = fork();
     if(pid == -1)

@@ -1,5 +1,11 @@
 /**
- * @author: DzhL
+ * @file nrf24l01.h
+ * @author DzhL (invintrar@gmail.com)
+ * @brief Use for drive NRF24L01+
+ * @version 1.2
+ * @date 2020-06-02
+ * 
+ * 
  */
 
 #ifndef NRF24L01_H
@@ -7,20 +13,24 @@
 #define NRF24L01_H
 
 #include <stdio.h>
-#include <stdint.h> //Required for the stdint typedefs
+#include <stdint.h> 
 #include <wiringPi.h>
 #include <wiringPiSPI.h>
 
-/*Definimos los puertos a utilizar*/
-#define RF_CE	  3
-#define RF_IRQ 	4
-#define CHANNEL 22
+/**
+ * @brief Definimos los puertos a utilizar 
+ * 
+ */
+#define RF_CE	    3
+#define RF_IRQ 	  4
+#define CHANNEL   22
+#define SIZEDATA  12
 
-#define RF24L01_CS_setOutput()	 	pinMode(RF_CS, OUTPUT)
+#define RF24L01_CS_setOutput()	pinMode(RF_CS, OUTPUT)
 #define RF24L01_CS_setHigh() 	 	digitalWrite(RF_CS, HIGH)
 #define RF24L01_CS_setLow()  	 	digitalWrite(RF_CS, LOW)
 
-#define RF24L01_CE_setOutput() 		pinMode (RF_CE, OUTPUT)
+#define RF24L01_CE_setOutput() 	pinMode (RF_CE, OUTPUT)
 #define RF24L01_CE_setHigh() 		digitalWrite(RF_CE, HIGH)
 #define RF24L01_CE_setLow()  		digitalWrite(RF_CE, LOW)
 
@@ -65,7 +75,10 @@
 #define RF24L01_command_NOP                   0xFF
 
 
-/* Variables */
+/**
+ * @brief Variable use for module NRF24L01+
+ * 
+ */
 
 uint8_t aux[2];
 
@@ -213,7 +226,10 @@ typedef struct _RF24L01_reg_FEATURE_content {
 
 
 
-/** Function Prototype **/
+/**
+ * @brief Function Prototype
+ * 
+ */
 
 void RF24L01_init(void);
 
@@ -225,7 +241,7 @@ void RF24L01_read_payload(uint8_t *data, uint8_t length);
 
 void RF24L01_set_mode_RX(void);
 
-void sendData(uint8_t data[],uint8_t size);
+void sendData(uint8_t data[]);
 
 uint8_t RF24L01_status(void);
 
@@ -235,6 +251,6 @@ void RF24L01_powerDown(void);
 
 #endif
 /**
- * End File
- *
- **/
+ * @brief end nrf24l01.h
+ * 
+ */

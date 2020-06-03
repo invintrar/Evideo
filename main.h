@@ -48,19 +48,17 @@ do { perror(msg); exit(EXIT_FAILURE); } while (0)
 struct timespec ts;
 struct itimerval timer; // configure timer
 //Init flag for nrf start in mode transmition
-uint8_t bNrf = 4;
+uint8_t bNrf = 0;
 // This variable use for first data receive.
 uint8_t bInit =1;
 //Use for ending bucle while 1
 uint8_t run = 1;
-//Use for ending bucle while 2
-uint8_t run1 = 1;
 //Address Nrf24L01+
 uint8_t tx_addr[5] = {0x78, 0x78, 0x78, 0x78, 0x78};
 uint8_t rx_addr[5] = {0x78, 0x78, 0x78, 0x78, 0x78};
 //Data sent or receive Nrf24L01+
-uint8_t txEnv[12] = {0};
-uint8_t rxRec[12] = {0};
+uint8_t txEnv[SIZEDATA] = {0};
+uint8_t rxRec[SIZEDATA] = {0};
 //Variable get time 
 uint8_t tarea = 0;
 int timeNanoSeconds = 0;

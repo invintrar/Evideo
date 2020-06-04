@@ -1,10 +1,20 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <limits.h>
 #include <float.h>
 
-int main(int argc, char** argv) {
-
+int main(int argc, char** argv) 
+{
+    long long v = 9000000000000000000;
+    printf("%llu\n", v);
+    printf("SIZE_CHAR   :   %d byte\n", sizeof(char));
+    printf("SIZE_SHORT  :   %d bytes\n", sizeof(short));
+    printf("SIZE_INT    :   %d bytes\n", sizeof(int));
+    printf("SIZE_LONG   :   %d bytes\n", sizeof(long long));
+    printf("SIZE_FLOAT  :   %d bytes\n", sizeof(float));
+    printf("SIZE_DOUBLE :   %d bytes\n", sizeof(double));
+    printf("SIZE_LDOUBLE:   %d bytes\n", sizeof(long double));
     printf("CHAR_BIT    :   %d\n", CHAR_BIT);
     printf("CHAR_MAX    :   %d\n", CHAR_MAX);
     printf("CHAR_MIN    :   %d\n", CHAR_MIN);

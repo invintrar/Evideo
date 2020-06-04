@@ -69,6 +69,7 @@ char tmp[1024];
 int ret;
 // Use count 
 unsigned int cSync = 0;
+bool bSync = true;
 // Time sent get from mastater
 int t1[2] = {0};
 int t3[2] = {0};

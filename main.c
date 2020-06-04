@@ -35,9 +35,10 @@ int main(int argc, char *argv[])
 	signal(SIGCHLD, processEnd);
 	//turn On led
 	ledOn();
+	printf("EVideo Esperando datos EBase\n");
 	// set mode RX
 	RF24L01_set_mode_RX();
-	printf("-----Mode  RX-----\nEsperando  Dato...\n");
+	//printf("Esperando Dato...\n");
 	
 	// Bucle while
 	while(run)
@@ -46,18 +47,22 @@ int main(int argc, char *argv[])
 		{
 			case 1://Data received
 				bNrf = 0;
+				printf("Dato  recibido...\n");
 				RF24L01_read_payload(rxRec, sizeof(rxRec));
+				//delay(3);
 				if(rxRec[0] > 0)
 					task(rxRec[0]);
                 break;
 			case 2://Date Sent
 				bNrf = 0;
-				printf("Dato Enviado\n");
+				printf("Dato   Enviado...\n");
 				RF24L01_set_mode_RX();
-				printf("-----Mode  RX-----\nEsperando  Dato...\n");
+				printf("Esperando Dato...\n");
 				break;
 			case 3://MAX_RT
 				printf("Maximo Numero de Retransmisiones\n");
+				RF24L01_set_mode_RX();
+				printf("Esperando Dato...\n");
                 bNrf = 0;
 				break;
 			default:
@@ -96,16 +101,15 @@ void task(uint8_t opc)
 				syncClock();
                 break;
             case 2: // Empezamos la captura de video
-				printf("Iniciando Captura de video...\n");
 				displayClock(CLOCK_REALTIME, "CLOCK_REALTIME");
-				timer.it_value.tv_sec = 59;
+				timer.it_value.tv_sec = 10;// colocar 59
 				timer.it_value.tv_usec = 0; // start in 60 sec
 				timer.it_interval.tv_sec = 1;
 				timer.it_interval.tv_usec = 0; // period = 1 sec
 				setitimer(ITIMER_REAL, &timer, NULL);
                 break;
             case 3: // Apagamos la aplicacion
-				printf("Apagado de la aplicacion remotamente");
+				printf("Apagado de la aplicacion remotamente\n");
                 ledOff();
                 RF24L01_powerDown();
 				exit(EXIT_SUCCESS);
@@ -140,28 +144,25 @@ void intHandler(int dummy)
  * 
  */
 void syncClock()
-{	
-	if (cSync == 0)
-		printf("Synchronization Starting\n");
+{
+	if (bSync){
+		printf("Sincronizacion Iniciada...\n");
+		bSync = !bSync;
+	}
 	
 	if(cSync < TIMES)
 	{
-		printf("IF: %d  vecess sincronizando\n",cSync);
 		if(rxRec[10]== 1 )
 		{
-			printf("IF Comprueba rxRec[10]=1\n");
 			convertCharToInt(t1);
 			ms_diff = syncDiffMS(t1);
-			printf("ms_diff = %lu\n", ms_diff);
 			//Obtenemos el tiempo y colocamo los datos en una variable globar txEnv[]
 			getTime(t3);
 			txEnv[0] = 2;
 			sendData(txEnv);
-			printf("here\n");
 		}
-		else
+		else if(rxRec[10] == 2)
 		{
-			printf("Else Comprueba rxRec[10]=1\n");
 			convertCharToInt(t1);
 			sm_diff = delayDifSM(t1);
 			long offset = (ms_diff - sm_diff)/2;
@@ -188,7 +189,6 @@ void syncClock()
 	}
 	else
 	{
-		printf("Else: %d veces sincronizando\n",cSync);
 		/*
 		struct timespec timeSet;
 		int in[2] = {0};
@@ -207,6 +207,7 @@ void syncClock()
 		printf("Largest Offset = %ldns\n", largest_offset);
 		printf("Largest Delay = %ldns\n", largest_delay);
 		printf("Done!\n");
+		printf("Sincronizacion Terminada\n");
 		txEnv[0]=3;
 		sendData(txEnv);
 		// init variable
@@ -304,14 +305,14 @@ void timer_handler(int sig)
  */
 void videoCapture(void)
 {
-	printf("Se grabara %02d:%02d:%02d\n", rxRec[2], rxRec[2], 0);
 	pid_t pid;
+	printf("Iniciando Captura de video...\n");
 	pid = fork();
     if(pid == -1)
         perror("fork");
     /* the childe ... */
     if(!pid){
-        sprintf(tmp,"%02d:%02d:%02d",rxRec[2],rxRec[1],0);
+        sprintf(tmp,"%02d:%02d:%02d",rxRec[3],rxRec[2],rxRec[1]);
         char *const args[] = {"ffmpeg" ,"-i", "/dev/video0", "-t", tmp,
         "-r", "24", "-metadata", "title=Estacion Video", "-loglevel", "quiet", "video.avi", NULL};
         ret = execvp ("ffmpeg", args);
@@ -396,7 +397,7 @@ uint8_t exist(void)
  * @param sig 
  */
 void processEnd(int sig){
-    printf("Proceso Terminado %d\n", sig);
+    printf("Fin de Caputura de Video y Termina el programa\n");
 	run = 0;
 	exit(EXIT_SUCCESS);
 	_exit(ret);

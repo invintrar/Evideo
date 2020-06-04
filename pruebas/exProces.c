@@ -4,7 +4,7 @@
 #include <unistd.h>
 #include <signal.h>
 
-char tmp[10];
+char tmp[10224];
 int ret;
 pid_t pid;
 
@@ -27,6 +27,7 @@ int main(int argc, char *argv[]){
             perror("execvp");
             exit(EXIT_FAILURE);
         }
+
     }
     sleep(1);
     int cont = 1;

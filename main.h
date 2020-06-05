@@ -26,26 +26,26 @@
 /**
  *          Define macros
  */
-#define LONG_MAX	2147483647L
-#define LONG_MIN	(-LONG_MAX-1)
-#define ULONG_MAX	0xFFFFFFFFUL
-#define TO_NSEC(t) (((long)t[0] * 1000000000L) + t[1]*1000)
-#define _XOPEN_SOURCE 700
-#define TIMES 5
-#define SECS_IN_DAY (24 * 60 * 60)
+//#define LONG_MAX            2147483647L
+//#define LONG_MIN	        (-LONG_MAX-1)
+//#define ULONG_MAX	        0xFFFFFFFFUL
+#define TO_NSEC(t)          (((long)t[0] * 1000000000L) + t[1]*1000)
+#define _XOPEN_SOURCE       700
+#define TIMES               10
+#define SECS_IN_DAY         (24 * 60 * 60)
 #define handle_error(msg) \
 do { perror(msg); exit(EXIT_FAILURE); } while (0)
 
-#define LED 		  	7
-#define ledSetOutput()  pinMode(LED, OUTPUT)
-#define ledOn()     	digitalWrite(LED, HIGH)
-#define ledOff() 	    digitalWrite(LED, LOW)
+#define LED 		  	    7
+#define ledSetOutput()      pinMode(LED, OUTPUT)
+#define ledOn()     	    digitalWrite(LED, HIGH)
+#define ledOff() 	        digitalWrite(LED, LOW)
 
 
 /**
  *          Define variables
  */
-struct timespec ts;
+struct timespec ts;//sttruct get time
 struct itimerval timer; // configure timer
 //Init flag for nrf start in mode transmition
 uint8_t bNrf = 0;
@@ -73,31 +73,29 @@ bool bSync = true;
 // Time sent get from mastater
 int t1[2] = {0};
 int t3[2] = {0};
+// Prompter for crear file.txt 
+FILE *archivo;
 
 long ms_diff = 0;
 long sm_diff = 0;
 long sum_offset = 0;
 long sum_delay = 0;
-long largest_offset = LONG_MIN;
-long smallest_offset = LONG_MAX;
-long smallest_delay = LONG_MAX;
-long largest_delay = LONG_MIN;
 
 /**
  *          Function prototype
  */
-void interrupcion(void);
-void task(uint8_t opc);
+void interrupcionNRF(void);
+void interruptTimer(int sig);
+void interruptProcessEnd(int sig);
 void intHandler(int dummy);
+void task(uint8_t opc);
 void syncClock(void);
 void getTime(int in[2]);
 void setClock(clockid_t clock, struct timespec *ts);
-void timer_handler(int sig);
 void videoCapture(void);
 void displayClock(clockid_t clock, char *name);
 void ledToggle(void);
-uint8_t exist(void);
-void processEnd(int sig);
+uint8_t existFile(void);
 void convertCharToInt(int out[2]);
 long syncDiffMS(int t1[2]);
 long delayDifSM(int t4[2]) ;

@@ -1,3 +1,3 @@
-#This target will compile all the file
+#for use glib.h add `pkg-config --cflags --libs glib-2.0`
 all:
-	gcc -o out main.c nrf24l01.c -lwiringPi
+	gcc main.c nrf24l01.c -lwiringPi -o out

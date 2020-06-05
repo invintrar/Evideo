@@ -13,7 +13,7 @@ int main(int argc, char *argv[])
 {
 	uint8_t i;
 	// delete record video if exist 
-	if(exist())
+	if(existFile())
     {
         sprintf(tmp, "rm video.avi");
         system(tmp);
@@ -26,19 +26,23 @@ int main(int argc, char *argv[])
     // Setting led output
 	ledSetOutput();
 	// Setting Interrupt for NRF2L01+
-	wiringPiISR(RF_IRQ , INT_EDGE_FALLING, interrupcion);
+	wiringPiISR(RF_IRQ , INT_EDGE_FALLING, interrupcionNRF);
 	// Interrupt when timer
-	signal(SIGALRM, timer_handler);
+	signal(SIGALRM, interruptTimer);
 	// Interrupt when catch Ctrl-C
 	signal(SIGINT, intHandler);
 	// Interrupt when end procesos cause fo execvp
-	signal(SIGCHLD, processEnd);
+	signal(SIGCHLD, interruptProcessEnd);
 	//turn On led
 	ledOn();
 	printf("EVideo Esperando datos EBase\n");
 	// set mode RX
 	RF24L01_set_mode_RX();
 	//printf("Esperando Dato...\n");
+	
+	//printf("Sen envio un dato\n");
+	//txEnv[0]= 3;
+	//sendData(txEnv);
 	
 	// Bucle while
 	while(run)
@@ -47,17 +51,18 @@ int main(int argc, char *argv[])
 		{
 			case 1://Data received
 				bNrf = 0;
-				printf("Dato  recibido...\n");
+				//printf("Dato  recibido...\n");
 				RF24L01_read_payload(rxRec, sizeof(rxRec));
-				//delay(3);
+				//printf("rxRec[10] %d\n", rxRec[10]);
+				delay(4);
 				if(rxRec[0] > 0)
 					task(rxRec[0]);
                 break;
 			case 2://Date Sent
 				bNrf = 0;
-				printf("Dato   Enviado...\n");
+				//printf("Dato   Enviado...\n");
 				RF24L01_set_mode_RX();
-				printf("Esperando Dato...\n");
+				//printf("Esperando Dato...\n");
 				break;
 			case 3://MAX_RT
 				printf("Maximo Numero de Retransmisiones\n");
@@ -78,7 +83,7 @@ int main(int argc, char *argv[])
  * or error in transmition.
  * 
  */
-void interrupcion()
+void interrupcionNRF()
 {
 	// Return 1:RX_DR(Data Received), 2:Data Sent,
     // 3:MAX_RT(Maximun number retransmition in mode Transmisition
@@ -156,7 +161,8 @@ void syncClock()
 		{
 			convertCharToInt(t1);
 			ms_diff = syncDiffMS(t1);
-			//Obtenemos el tiempo y colocamo los datos en una variable globar txEnv[]
+			//Obtenemos el tiempo y 
+			//colocamo los datos en una variable globar txEnv[]
 			getTime(t3);
 			txEnv[0] = 2;
 			sendData(txEnv);
@@ -167,21 +173,9 @@ void syncClock()
 			sm_diff = delayDifSM(t1);
 			long offset = (ms_diff - sm_diff)/2;
 			long delay = (ms_diff + sm_diff)/2;
-			/* calculate averages, min, max */
+			//agregamos a la suma ofseet y delay
 			sum_offset += offset;
-			if (largest_offset < offset) {
-				largest_offset = offset;
-			}
-			if (smallest_offset > offset) {
-				smallest_offset = offset;
-			}
 			sum_delay += delay;
-			if (largest_delay < delay) {
-				largest_delay = delay;
-			}
-			if (smallest_delay > delay) {
-				smallest_delay = delay;
-			}
 			txEnv[0]=1;
 			sendData(txEnv);
 			cSync++;
@@ -189,7 +183,28 @@ void syncClock()
 	}
 	else
 	{
+		// Show results
+		printf("Average Offset = %ld ns\n", sum_offset/(TIMES));
+		printf("Average Delay  = %ld ns\n", sum_delay/(TIMES));
+		printf("Done!\n");
+		printf("Sincronizacion Terminada\n");
+		txEnv[0]=3;
+		sendData(txEnv);
+		// Use for save dates in DatosSync
+		archivo = fopen("DatosSync.csv","at");
+		if(archivo == NULL)
+		{
+			printf("Error al crear el archivo\n");
+		}
+		else
+		{
+			// Column 1 Offset(ns), Column 2 delay (ns)
+			fprintf(archivo, "%ld,%ld\n",sum_offset/(TIMES),sum_delay/(TIMES));
+			fclose(archivo);
+		}
+		
 		/*
+		//Set clock
 		struct timespec timeSet;
 		int in[2] = {0};
 		getTime(in);
@@ -199,25 +214,10 @@ void syncClock()
 		displayClock(CLOCK_REALTIME, "CLOCK_REALTIME");
 		printf("Sincronizacion Terminada\n");
 		*/
-		/* print results */
-		printf("Average Offset = %ldns\n", sum_offset/(TIMES));
-		printf("Average Delay = %ldns\n", sum_delay/(TIMES));
-		printf("Smallest Offset = %ldns\n", smallest_offset);
-		printf("Smallest Delay = %ldns\n", smallest_delay);
-		printf("Largest Offset = %ldns\n", largest_offset);
-		printf("Largest Delay = %ldns\n", largest_delay);
-		printf("Done!\n");
-		printf("Sincronizacion Terminada\n");
-		txEnv[0]=3;
-		sendData(txEnv);
 		// init variable
 		cSync = 0;
 		sum_offset = 0;
 		sum_delay = 0;
-		largest_offset = LONG_MIN;
-		smallest_offset = LONG_MAX;
-		smallest_delay = LONG_MAX;
-		largest_delay = LONG_MIN;
 	}
 } // en synClock
 
@@ -283,7 +283,7 @@ void setClock(clockid_t clock, struct timespec *ts)
  * 
  * @param sig 
  */
-void timer_handler(int sig)
+void interruptTimer(int sig)
 {
 	static bool cont = true;
     if(cont)
@@ -373,7 +373,7 @@ void ledToggle(void)
  * Si existe returno 1 caso contrario 0.
  * @return uint8_t 
  */
-uint8_t exist(void)
+uint8_t existFile(void)
 {
     FILE *arch;
     arch = fopen("video.avi","r");
@@ -396,7 +396,8 @@ uint8_t exist(void)
  * 
  * @param sig 
  */
-void processEnd(int sig){
+void interruptProcessEnd(int sig)
+{
     printf("Fin de Caputura de Video y Termina el programa\n");
 	run = 0;
 	exit(EXIT_SUCCESS);

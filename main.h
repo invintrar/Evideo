@@ -26,10 +26,8 @@
 /**
  *          Define macros
  */
-//#define LONG_MAX            2147483647L
-//#define LONG_MIN	        (-LONG_MAX-1)
-//#define ULONG_MAX	        0xFFFFFFFFUL
-#define TO_NSEC(t)          (((long)t[0] * 1000000000L) + t[1]*1000)
+
+#define TO_NSEC(t)          (((long)t[0] * 1000000000L) + t[1])
 #define _XOPEN_SOURCE       700
 #define TIMES               10
 #define SECS_IN_DAY         (24 * 60 * 60)
@@ -75,6 +73,7 @@ int t1[2] = {0};
 int t3[2] = {0};
 // Prompter for crear file.txt 
 FILE *archivo;
+
 
 long ms_diff = 0;
 long sm_diff = 0;

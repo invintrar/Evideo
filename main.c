@@ -35,14 +35,9 @@ int main(int argc, char *argv[])
 	signal(SIGCHLD, interruptProcessEnd);
 	//turn On led
 	ledOn();
-	printf("EVideo Esperando datos EBase\n");
 	// set mode RX
 	RF24L01_set_mode_RX();
-	//printf("Esperando Dato...\n");
-	
-	//printf("Sen envio un dato\n");
-	//txEnv[0]= 3;
-	//sendData(txEnv);
+	printf("EVideo Esperando datos EBase\n");
 	
 	// Bucle while
 	while(run)

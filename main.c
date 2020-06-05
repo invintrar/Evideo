@@ -179,8 +179,10 @@ void syncClock()
 	else
 	{
 		// Show results
-		printf("Average Offset = %ld ns\n", sum_offset/(TIMES));
-		printf("Average Delay  = %ld ns\n", sum_delay/(TIMES));
+		offsetMesure = sum_offset/(TIMES);
+		delayMesure = sum_delay/(TIMES);
+		printf("Average Offset = %10ld ns\n", offsetMesure);
+		printf("Average Delay  = %10ld ns\n", delayMesure);
 		printf("Done!\n");
 		printf("Sincronizacion Terminada\n");
 		txEnv[0]=3;
@@ -194,25 +196,33 @@ void syncClock()
 		else
 		{
 			// Column 1 Offset(ns), Column 2 delay (ns)
-			fprintf(archivo, "%ld,%ld\n",sum_offset/(TIMES),sum_delay/(TIMES));
+			fprintf(archivo, "%ld,%ld\n", offsetMesure, delayMesure);
 			fclose(archivo);
 		}
-		
-		/*
 		//Set clock
 		struct timespec timeSet;
 		int in[2] = {0};
+		if(offsetMesure < 0)
+			offsetMesure = -1 * offsetMesure;
+		if (delayMesure < 0)
+			delayMesure = -1 * delayMesure;
 		getTime(in);
+		in[1] = offsetMesure + delayMesure + in[1];
+		if(in[1] > 1000000000){
+			in[1] = in[1] - 1000000000;
+			in[0]++;
+		}
 		timeSet.tv_sec = in[0];
 		timeSet.tv_nsec = in[1];
 		setClock( CLOCK_REALTIME, &timeSet);
 		displayClock(CLOCK_REALTIME, "CLOCK_REALTIME");
 		printf("Sincronizacion Terminada\n");
-		*/
 		// init variable
 		cSync = 0;
 		sum_offset = 0;
 		sum_delay = 0;
+		offsetMesure = 0;
+		delayMesure = 0;
 	}
 } // en synClock
 

@@ -29,7 +29,7 @@
 
 #define TO_NSEC(t)          (((long)t[0] * 1000000000L) + t[1])
 #define _XOPEN_SOURCE       700
-#define TIMES               10
+#define TIMES               500
 #define SECS_IN_DAY         (24 * 60 * 60)
 #define handle_error(msg) \
 do { perror(msg); exit(EXIT_FAILURE); } while (0)
@@ -77,8 +77,10 @@ FILE *archivo;
 
 long ms_diff = 0;
 long sm_diff = 0;
-long sum_offset = 0;
-long sum_delay = 0;
+long long sum_offset = 0;
+long long sum_delay = 0;
+long offsetMesure = 0;
+long delayMesure = 0;
 
 /**
  *          Function prototype

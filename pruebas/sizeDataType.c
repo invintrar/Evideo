@@ -11,7 +11,7 @@ int main(int argc, char** argv)
     printf("SIZE_CHAR   :   %d byte\n", sizeof(char));
     printf("SIZE_SHORT  :   %d bytes\n", sizeof(short));
     printf("SIZE_INT    :   %d bytes\n", sizeof(int));
-    printf("SIZE_LONG   :   %d bytes\n", sizeof(long long));
+    printf("SIZE_LLONG  :   %d bytes\n", sizeof(long long));
     printf("SIZE_FLOAT  :   %d bytes\n", sizeof(float));
     printf("SIZE_DOUBLE :   %d bytes\n", sizeof(double));
     printf("SIZE_LDOUBLE:   %d bytes\n", sizeof(long double));

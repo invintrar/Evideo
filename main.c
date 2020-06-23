@@ -101,12 +101,17 @@ void task(uint8_t opc)
 				syncClock();
                 break;
             case 2: // Empezamos la captura de video
-				displayClock(CLOCK_REALTIME, "CLOCK_REALTIME");
+				displayClock(CLOCK_REALTIME, "Reloj de Tiempo Real");
 				timer.it_value.tv_sec = 10;// colocar 59
 				timer.it_value.tv_usec = 0; // start in 60 sec
 				timer.it_interval.tv_sec = 1;
 				timer.it_interval.tv_usec = 0; // period = 1 sec
 				setitimer(ITIMER_REAL, &timer, NULL);
+				// Enviamos la orden para notificar que se recibio la orden de inicio de grabacion
+				txEnv[0] = 5;
+				// Enviamos el identificador de la estacion base identificador es 11
+				txEnv[1] = 11;
+				sendData(txEnv);
                 break;
             case 3: // Apagamos la aplicacion
 				printf("Apagado de la aplicacion remotamente\n");
@@ -215,7 +220,7 @@ void syncClock()
 		timeSet.tv_sec = in[0];
 		timeSet.tv_nsec = in[1];
 		setClock( CLOCK_REALTIME, &timeSet);
-		displayClock(CLOCK_REALTIME, "CLOCK_REALTIME");
+		displayClock(CLOCK_REALTIME, "Reloj de Tiempo Real");
 		printf("Sincronizacion Terminada\n");
 		// init variable
 		cSync = 0;
@@ -293,7 +298,7 @@ void interruptTimer(int sig)
 	static bool cont = true;
     if(cont)
     {
-        displayClock(CLOCK_REALTIME, "CLOCK_REALTIME");
+        displayClock(CLOCK_REALTIME, "Reloj De Tiempo Real");
 		videoCapture();
         cont = !cont;
     }else

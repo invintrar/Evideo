@@ -29,7 +29,7 @@
 
 #define TO_NSEC(t)          (((long)t[0] * 1000000000L) + t[1])
 #define _XOPEN_SOURCE       700
-#define TIMES               500
+#define TIMES               100
 #define SECS_IN_DAY         (24 * 60 * 60)
 #define handle_error(msg) \
 do { perror(msg); exit(EXIT_FAILURE); } while (0)
@@ -48,7 +48,8 @@ struct itimerval timer; // configure timer
 //Init flag for nrf start in mode transmition
 uint8_t bNrf = 0;
 // This variable use for first data receive.
-uint8_t bInit =1;
+uint8_t bInit = 1;
+uint8_t timerSeconds = 0;
 //Use for ending bucle while 1
 uint8_t run = 1;
 //Address Nrf24L01+

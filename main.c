@@ -37,7 +37,7 @@ int main(int argc, char *argv[])
 	ledOn();
 	// set mode RX
 	RF24L01_set_mode_RX();
-	printf("EVideo Esperando datos EBase\n");
+	printf("%26s\nEsperando datos de la estacion base..\n","Estacion Video");
 	
 	// Bucle while
 	while(run)
@@ -100,15 +100,16 @@ void task(uint8_t opc)
             case 1: // Syncronization clock
 				syncClock();
                 break;
-            case 2: // Empezamos la captura de video
+            case 4: // Empezamos la captura de video
+				printf("Recibimos Instruccion para captura de video\n");
 				displayClock(CLOCK_REALTIME, "Reloj de Tiempo Real");
-				timer.it_value.tv_sec = 10;// colocar 59
-				timer.it_value.tv_usec = 0; // start in 60 sec
+				timer.it_value.tv_sec = 60;// colocar 59
+				timer.it_value.tv_usec = timerSeconds;// start in 60 sec
 				timer.it_interval.tv_sec = 1;
 				timer.it_interval.tv_usec = 0; // period = 1 sec
 				setitimer(ITIMER_REAL, &timer, NULL);
 				// Enviamos la orden para notificar que se recibio la orden de inicio de grabacion
-				txEnv[0] = 5;
+				txEnv[0] = 6;
 				// Enviamos el identificador de la estacion base identificador es 11
 				txEnv[1] = 11;
 				sendData(txEnv);
@@ -188,9 +189,10 @@ void syncClock()
 		delayMesure = sum_delay/(TIMES);
 		printf("Average Offset = %10ld ns\n", offsetMesure);
 		printf("Average Delay  = %10ld ns\n", delayMesure);
-		printf("Done!\n");
-		printf("Sincronizacion Terminada\n");
+		// Indica que la sincronizacion se completo exitosamente
 		txEnv[0]=3;
+		// Identificador de la estacion video
+		txEnv[1] = 11;
 		sendData(txEnv);
 		// Use for save dates in DatosSync
 		archivo = fopen("DatosSync.csv","at");
@@ -298,6 +300,7 @@ void interruptTimer(int sig)
 	static bool cont = true;
     if(cont)
     {
+		printf("Inicio de la captura de video\n");
         displayClock(CLOCK_REALTIME, "Reloj De Tiempo Real");
 		videoCapture();
         cont = !cont;
@@ -316,13 +319,12 @@ void interruptTimer(int sig)
 void videoCapture(void)
 {
 	pid_t pid;
-	printf("Iniciando Captura de video...\n");
 	pid = fork();
     if(pid == -1)
         perror("fork");
     /* the childe ... */
     if(!pid){
-        sprintf(tmp,"%02d:%02d:%02d",rxRec[3],rxRec[2],rxRec[1]);
+        sprintf(tmp,"%02d:%02d:%02d",rxRec[11],rxRec[10],rxRec[9]);
         char *const args[] = {"ffmpeg" ,"-i", "/dev/video0", "-t", tmp,
         "-r", "24", "-metadata", "title=Estacion Video", "-loglevel", "quiet", "video.avi", NULL};
         ret = execvp ("ffmpeg", args);
@@ -348,14 +350,11 @@ void displayClock(clockid_t clock, char *name)
         perror("clock_gettime");
         exit(EXIT_FAILURE);
     }
-    printf("%-15s: %10ld.%03ld (", name,
-    (long) ts.tv_sec, ts.tv_nsec / 1000000);
-    long days = ts.tv_sec / SECS_IN_DAY;
-    if (days > 0)
-        printf("%ld days + ", days);
+    printf("%-15s: ", name);
+	timerSeconds = ts.tv_sec % 60;
     printf("%2ldh %2ldm %2lds", (ts.tv_sec % SECS_IN_DAY) / 3600,
     (ts.tv_sec % 3600) / 60, ts.tv_sec % 60);
-    printf(")\n");
+    printf("\n");
 }
 
 
@@ -408,7 +407,10 @@ uint8_t existFile(void)
  */
 void interruptProcessEnd(int sig)
 {
-    printf("Fin de Caputura de Video y Termina el programa\n");
+	
+    printf("Fin de Caputura de Video\n Termina el programa\n");
+	displayClock(CLOCK_REALTIME, "Reloj De Tiempo Real");
+	printf("Adios\n\n");
 	run = 0;
 	exit(EXIT_SUCCESS);
 	_exit(ret);

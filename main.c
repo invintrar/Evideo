@@ -318,6 +318,8 @@ void interruptTimer(int sig)
  */
 void videoCapture(void)
 {
+	char tmpTime[100];
+	sprintf(tmpTime,"%02d%02d%02dEvideo.avi",timeInitHour, timeInitMinute, timeInitSec);
 	pid_t pid;
 	pid = fork();
     if(pid == -1)
@@ -326,7 +328,7 @@ void videoCapture(void)
     if(!pid){
         sprintf(tmp,"%02d:%02d:%02d",rxRec[11],rxRec[10],rxRec[9]);
         char *const args[] = {"ffmpeg" ,"-i", "/dev/video0", "-t", tmp,
-        "-r", "24", "-metadata", "title=Estacion Video", "-loglevel", "quiet", "video.avi", NULL};
+        "-r", "24", "-metadata", "title=Estacion Video", "-loglevel", "quiet", tmpTime, NULL};
         ret = execvp ("ffmpeg", args);
         if (ret == -1){
             perror("execvp");
@@ -352,8 +354,10 @@ void displayClock(clockid_t clock, char *name)
     }
     printf("%-15s: ", name);
 	timerSeconds = ts.tv_sec % 60;
-    printf("%2ldh %2ldm %2lds", (ts.tv_sec % SECS_IN_DAY) / 3600,
-    (ts.tv_sec % 3600) / 60, ts.tv_sec % 60);
+	timeInitHour = (ts.tv_sec % SECS_IN_DAY) / 3600;
+	timeInitMinute = (ts.tv_sec % 3600) / 60;
+	timeInitSec = ts.tv_sec % 60;
+    printf("%2ldh %2ldm %2lds", timeInitHour, timeInitMinute, timeInitSec);
     printf("\n");
 }
 

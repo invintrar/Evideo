@@ -62,6 +62,11 @@ uint8_t rxRec[SIZEDATA] = {0};
 uint8_t tarea = 0;
 int timeNanoSeconds = 0;
 int timeSeconds = 0;
+
+int timeInitSec = 0;
+int timeInitMinute = 0;
+int timeInitHour = 0;
+
 // variable temporal for formate output string
 char tmp[1024];
 // Use for execute proceso in terminal
